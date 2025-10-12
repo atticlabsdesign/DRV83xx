@@ -49,7 +49,7 @@ drvError_t drv8305RegWrite(drv8305Addr_t addr, uint16_t *data){
     uint16_t buffer = (1<<15) | (addr << 11) | (*data & 0x3ff);
 
     #if  __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-        buffer = (buffer << 8 ) | (buffer >> 8); //swap bytes before sending this might be needed after too but i seem to recall the read value being fine... strange
+        buffer = (buffer << 8 ) | (buffer >> 8); 
     #endif
 
     SPI_BufferExchange(&buffer, sizeof(buffer));
@@ -107,43 +107,43 @@ drvError_t drv8305SetSettings(drv8305Settings_t *settings){
 
     uint16_t buffer; //so we dont overwrite the values in the struct
 
-    buffer = settings->highGateCtrl;
+    buffer = settings->highGateCtrl.bits;
     error = drv8305RegWrite(HSGATECTRL, &buffer);
     if (error) {
         return error;
     }
 
-    buffer = settings->lowGateCtrl; 
+    buffer = settings->lowGateCtrl.bits; 
     error = drv8305RegWrite(LSGATECTRL, &buffer);
     if (error) {
         return error;
     }
 
-    buffer = settings->gateCtrl;
+    buffer = settings->gateCtrl.bits;
     error = drv8305RegWrite(GATECTRL, &buffer);
     if (error) {
         return error;
     }
 
-    buffer = settings->icCtrl; 
+    buffer = settings->icCtrl.bits; 
     error = drv8305RegWrite(ICCTRL, &buffer);
     if (error) {
         return error;
     }
 
-    buffer = settings->shntCtrl;
+    buffer = settings->shntCtrl.bits;
     error = drv8305RegWrite(SHNTCTRL, &buffer);
     if (error) {
         return error;
     }
 
-    buffer = settings->vregCtrl; 
+    buffer = settings->vregCtrl.bits; 
     error = drv8305RegWrite(VREGCTRL, &buffer);
     if (error) {
         return error;
     }
 
-    buffer = settings->vdsCtrl; 
+    buffer = settings->vdsCtrl.bits; 
     error = drv8305RegWrite(VDSCNTRL, &buffer);
 
     return error;
