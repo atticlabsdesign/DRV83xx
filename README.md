@@ -4,10 +4,11 @@ Libary for interfacing with TI DRV83xx Motor Drivers
 # Motor Controllers Supported So Far:
  - DRV8305
 # Dependancies
+Required:
 - https://github.com/atticlabsdesign/pinctrl
 - https://github.com/atticlabsdesign/pwm
 
-optional:
+Optional:
 - https://github.com/atticlabsdesign/dbgcli
 
 # Usage
