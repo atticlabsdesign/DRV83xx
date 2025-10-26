@@ -35,7 +35,6 @@ drvError_t drv8305RegRead(drv8305Comms_t *spi, drv8305Addr_t addr, uint16_t *dat
     pinId_t test = {.port = &(PORTB), .pin = 1};
     
     setPin(test, LOW);
-    printf("%x\n\r",addr);
 
     uint16_t buffer = (1<<15) | (addr << 11);
 
@@ -97,36 +96,43 @@ drvError_t drv8305GetSettings(drv8305Settings_t *settings){
     drvError_t error = DRV_OK;
     
     error = drv8305RegRead(settings->comms, HSGATECTRL, &settings->highGateCtrl.bits);
+    printf("buffer: 0x%x \n\r", settings->highGateCtrl.bits);
     if (error) {
         return error;
     }
     
     error = drv8305RegRead(settings->comms, LSGATECTRL, &settings->lowGateCtrl.bits);
+    printf("buffer: 0x%x \n\r", settings->lowGateCtrl.bits);
     if (error) {
         return error;
     }
     
     error = drv8305RegRead(settings->comms, GATECTRL, &settings->gateCtrl.bits);
+    printf("buffer: 0x%x \n\r", settings->gateCtrl.bits);
     if (error) {
         return error;
     }
     
     error = drv8305RegRead(settings->comms, ICCTRL, &settings->icCtrl.bits);
+    printf("buffer: 0x%x \n\r", settings->icCtrl.bits);
     if (error) {
         return error;
     }
     
     error = drv8305RegRead(settings->comms, SHNTCTRL, &settings->shntCtrl.bits);
+    printf("buffer: 0x%x \n\r", settings->shntCtrl.bits);
     if (error) {
         return error;
     }
     
     error = drv8305RegRead(settings->comms, VREGCTRL, &settings->vregCtrl.bits);
+    printf("buffer: 0x%x \n\r", settings->vregCtrl.bits);
     if (error) {
         return error;
     }
     
     error = drv8305RegRead(settings->comms, VDSCNTRL, &settings->vdsCtrl.bits);
+    printf("buffer: 0x%x \n\r", settings->vdsCtrl.bits);
 
     return error;
 }
@@ -200,7 +206,7 @@ drvError_t drv8305CW(drv8305Dev_t *dev){ //this needs to be called at the desire
     drvError_t error = DRV_OK;
     uint8_t state = 0;
 
-    switch (dev->settings->gateCtrl.PWM_MODE) {
+    switch (dev->settings.gateCtrl.PWM_MODE) {
 
         case INPUT_1:
             state = drv8305StateMachine(false);
@@ -235,7 +241,7 @@ drvError_t drv8305CCW(drv8305Dev_t *dev){ //this needs to be called at the desir
     drvError_t error = DRV_OK;
     uint8_t state = 0;
 
-    switch (dev->settings->gateCtrl.PWM_MODE) {
+    switch (dev->settings.gateCtrl.PWM_MODE) {
 
         case INPUT_1:
             state = drv8305StateMachine(true);
@@ -269,7 +275,7 @@ drvError_t drv8305CCW(drv8305Dev_t *dev){ //this needs to be called at the desir
 
 drvError_t drv8305Brake(drv8305Dev_t *dev){
     drvError_t error = DRV_OK;
-    switch (dev->settings->gateCtrl.PWM_MODE) {
+    switch (dev->settings.gateCtrl.PWM_MODE) {
 
         case INPUT_1:
             // all gpio low
@@ -306,7 +312,7 @@ drvError_t drv8305Brake(drv8305Dev_t *dev){
 
 drvError_t drv8305Align(drv8305Dev_t *dev){
     drvError_t error = DRV_OK;
-    switch (dev->settings->gateCtrl.PWM_MODE) {
+    switch (dev->settings.gateCtrl.PWM_MODE) {
 
         case INPUT_1:
             // 1110

@@ -490,7 +490,7 @@ typedef struct {
 } drv8305Pins_t;
 
 typedef struct {
-    drv8305Settings_t *settings;
+    drv8305Settings_t settings;
     drv8305Pins_t *pinCtrl;
     
 } drv8305Dev_t;
