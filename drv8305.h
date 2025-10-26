@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "drv83xx_types.h"
+#include "../pwm/pwm.h"
+#include "../pinctrl/pinctrl.h"
+#include "../../SPI_test_config/mcc/mcc_generated_files/spi/spi.h" //need to find a better way of referencing mcc files
 
 // Masks for SPI registers
 
@@ -436,6 +439,12 @@ typedef union {
 /*________________________________________________*/
 
 typedef struct {
+    const struct SPI_INTERFACE *spiInterface;
+    pinId_t              *nCS;
+}drv8305Comms_t;
+
+
+typedef struct {
     drv8305_XS_GATE_DRIVE_CONTROL_t highGateCtrl;      
     drv8305_XS_GATE_DRIVE_CONTROL_t lowGateCtrl;
     drv8305_GATE_DRIVE_CONTROL_t    gateCtrl;
@@ -443,8 +452,48 @@ typedef struct {
     drv8305_SHUNT_AMP_CTRL_t        shntCtrl;
     drv8305_VOLAGE_REG_CTRL_t       vregCtrl;
     drv8305_VDS_SENSE_CTRL_t        vdsCtrl;
-    
+    drv8305Comms_t                  *comms;
+
 } drv8305Settings_t;
+
+typedef struct {
+    union {
+        struct {
+            pwmCh8_t pwm;
+            pinId_t inla;
+            pinId_t inhb;
+            pinId_t inlb;
+            pinId_t dwell; //
+        } singlePwm;
+
+        struct {
+            pwmCh8_t pwm1;
+            pwmCh8_t pwm2;
+            pwmCh8_t pwm3;
+        } triplePWM;
+
+        struct {
+            pwmCh8_t pwm1;
+            pwmCh8_t pwm2;
+            pwmCh8_t pwm3;
+            pwmCh8_t pwm4;
+            pwmCh8_t pwm5;
+            pwmCh8_t pwm6;
+        } sixPWM; 
+    };
+    pinId_t enGate;
+    pinId_t nFault;
+    pinId_t pwrgd;
+    //still need some current amplifier stuff
+    pinId_t wake;
+
+} drv8305Pins_t;
+
+typedef struct {
+    drv8305Settings_t *settings;
+    drv8305Pins_t *pinCtrl;
+    
+} drv8305Dev_t;
 
 /********************
 ---------------------
@@ -453,9 +502,10 @@ typedef struct {
 ********************/
 
 
-drvError_t drv8305RegRead(drv8305Addr_t, uint16_t*);
 
-drvError_t drv8305RegWrite(drv8305Addr_t, uint16_t*); // should this really be public?
+drvError_t drv8305RegRead(drv8305Comms_t *, drv8305Addr_t, uint16_t*);
+
+drvError_t drv8305RegWrite(const drv8305Comms_t *, drv8305Addr_t, uint16_t*); // should this really be public?
 
 drvError_t drv8305SetSettings(drv8305Settings_t *);
 
@@ -463,11 +513,13 @@ drvError_t drv8305GetSettings(drv8305Settings_t *);
 
 
 //these functions are undercooked, give more time
+drvError_t drv8305DevInit(drv8305Dev_t *, const drv8305Comms_t);
 
-drvError_t drv8305CW(drv8305Settings_t);
+drvError_t drv8305CW(drv8305Dev_t*);
 
-drvError_t drv8305CCW(drv8305Settings_t);
+drvError_t drv8305CCW(drv8305Dev_t*);
 
-drvError_t drv8305Brake(drv8305Settings_t);
+drvError_t drv8305Brake(drv8305Dev_t*);
 
+drvError_t drv8305Align(drv8305Dev_t*);
 #endif
