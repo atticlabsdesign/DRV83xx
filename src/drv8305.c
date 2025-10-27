@@ -5,6 +5,15 @@
 
 // extern void SPI_BufferExchange(void * bufferData, size_t bufferSize); //could probably replace this with a function pointer in the struct which the programmer defines with the settings, the functions would all then take the struct and use the function
 
+const drv8305Settings_t DRV8305_DEFAULT_SETTINGS = {
+    .highGateCtrl.bits  = 0x344,
+    .lowGateCtrl.bits   = 0x344,
+    .gateCtrl.bits      = 0x216,
+    .icCtrl.bits        = 0x020,
+    .shntCtrl.bits      = 0x000,
+    .vregCtrl.bits      = 0x10A,
+    .vdsCtrl.bits       = 0x0C8, //mine returns 2c8 but the high bit is in the reserved area so doesnt matter
+};
 
 /********************
 ---------------------
@@ -21,7 +30,6 @@ uint8_t drv8305StateMachine(bool);
 ********************/
 
 
-
 /**
  * @brief Reads a single SPI register of a DRV8305 Motor Controller
  * 
@@ -32,9 +40,7 @@ uint8_t drv8305StateMachine(bool);
 drvError_t drv8305RegRead(drv8305Comms_t *spi, drv8305Addr_t addr, uint16_t *data){
     bool timeout = false;
     
-    pinId_t test = {.port = &(PORTB), .pin = 1};
-    
-    setPin(test, LOW);
+    setPin(spi->nCS, LOW);
 
     uint16_t buffer = (1<<15) | (addr << 11);
 
@@ -42,16 +48,16 @@ drvError_t drv8305RegRead(drv8305Comms_t *spi, drv8305Addr_t addr, uint16_t *dat
         buffer = (buffer << 8 ) | (buffer >> 8); 
     #endif
 
-    SPI.BufferExchange(&buffer, sizeof(buffer));
+    spi->spiInterface->BufferExchange(&buffer, sizeof(buffer));
 
     #if  __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
         buffer = (buffer << 8 ) | (buffer >> 8); 
     #endif
     
     *data = (buffer & 0x3ff);
-    printf("data done: 0X%X \n\r", *data);
+    
 
-    setPin(test, HIGH);
+    setPin(spi->nCS, HIGH);
     
     if (timeout) {
         return DRV_NO_RESP;
@@ -68,11 +74,11 @@ drvError_t drv8305RegRead(drv8305Comms_t *spi, drv8305Addr_t addr, uint16_t *dat
  * @param data Data to be written to register, contains the overwritten value of the register after writing
  * @return drvError_t 
  */
-drvError_t drv8305RegWrite(const drv8305Comms_t *spi, drv8305Addr_t addr, uint16_t *data){
+drvError_t drv8305RegWrite(drv8305Comms_t *spi, drv8305Addr_t addr, uint16_t *data){
     bool timeout = false;
-    setPin(*spi->nCS, LOW);
+    setPin(spi->nCS, LOW);
     
-    uint16_t buffer = (1<<15) | (addr << 11) | (*data & 0x3ff);
+    uint16_t buffer = (0<<15) | (addr << 11) | (*data & 0x3ff);
 
     #if  __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
         buffer = (buffer << 8 ) | (buffer >> 8); 
@@ -81,7 +87,7 @@ drvError_t drv8305RegWrite(const drv8305Comms_t *spi, drv8305Addr_t addr, uint16
     spi->spiInterface->BufferExchange(&buffer, sizeof(buffer));
     *data = (buffer & 0x3ff); //data now cointains the overwritten values, is this even useful?
 
-    setPin(*spi->nCS, HIGH);
+    setPin(spi->nCS, HIGH);
 
     if (timeout) {
         return DRV_NO_RESP;
@@ -92,111 +98,87 @@ drvError_t drv8305RegWrite(const drv8305Comms_t *spi, drv8305Addr_t addr, uint16
 }
 
 
-drvError_t drv8305GetSettings(drv8305Settings_t *settings){
+drvError_t drv8305GetSettings(drv8305Dev_t *dev){
     drvError_t error = DRV_OK;
     
-    error = drv8305RegRead(settings->comms, HSGATECTRL, &settings->highGateCtrl.bits);
-    printf("buffer: 0x%x \n\r", settings->highGateCtrl.bits);
+    error = drv8305RegRead(&dev->comms, HSGATECTRL, &dev->settings.highGateCtrl.bits);
     if (error) {
         return error;
     }
     
-    error = drv8305RegRead(settings->comms, LSGATECTRL, &settings->lowGateCtrl.bits);
-    printf("buffer: 0x%x \n\r", settings->lowGateCtrl.bits);
+    error = drv8305RegRead(&dev->comms, LSGATECTRL, &dev->settings.lowGateCtrl.bits);
     if (error) {
         return error;
     }
     
-    error = drv8305RegRead(settings->comms, GATECTRL, &settings->gateCtrl.bits);
-    printf("buffer: 0x%x \n\r", settings->gateCtrl.bits);
+    error = drv8305RegRead(&dev->comms, GATECTRL, &dev->settings.gateCtrl.bits);
     if (error) {
         return error;
     }
     
-    error = drv8305RegRead(settings->comms, ICCTRL, &settings->icCtrl.bits);
-    printf("buffer: 0x%x \n\r", settings->icCtrl.bits);
+    error = drv8305RegRead(&dev->comms, ICCTRL, &dev->settings.icCtrl.bits);
     if (error) {
         return error;
     }
     
-    error = drv8305RegRead(settings->comms, SHNTCTRL, &settings->shntCtrl.bits);
-    printf("buffer: 0x%x \n\r", settings->shntCtrl.bits);
+    error = drv8305RegRead(&dev->comms, SHNTCTRL, &dev->settings.shntCtrl.bits);
     if (error) {
         return error;
     }
     
-    error = drv8305RegRead(settings->comms, VREGCTRL, &settings->vregCtrl.bits);
-    printf("buffer: 0x%x \n\r", settings->vregCtrl.bits);
+    error = drv8305RegRead(&dev->comms, VREGCTRL, &dev->settings.vregCtrl.bits);
     if (error) {
         return error;
     }
     
-    error = drv8305RegRead(settings->comms, VDSCNTRL, &settings->vdsCtrl.bits);
-    printf("buffer: 0x%x \n\r", settings->vdsCtrl.bits);
+    error = drv8305RegRead(&dev->comms, VDSCNTRL, &dev->settings.vdsCtrl.bits);
 
     return error;
 }
 
-drvError_t drv8305SetSettings(drv8305Settings_t *settings){ //TODO: try to figure out a way to avoid unneccessarily writing to registers
+drvError_t drv8305SetSettings(drv8305Dev_t *dev){ //TODO: try to figure out a way to avoid unneccessarily writing to registers
     drvError_t error = DRV_OK;          
 
     uint16_t buffer; //so we dont overwrite the values in the struct
 
-    buffer = settings->highGateCtrl.bits;
-    error = drv8305RegWrite(settings->comms, HSGATECTRL, &buffer);
+    buffer = dev->settings.highGateCtrl.bits;
+    error = drv8305RegWrite(&dev->comms, HSGATECTRL, &buffer);
     if (error) {
         return error;
     }
 
-    buffer = settings->lowGateCtrl.bits; 
-    error = drv8305RegWrite(settings->comms, LSGATECTRL, &buffer);
+    buffer = dev->settings.lowGateCtrl.bits; 
+    error = drv8305RegWrite(&dev->comms, LSGATECTRL, &buffer);
     if (error) {
         return error;
     }
 
-    buffer = settings->gateCtrl.bits;
-    error = drv8305RegWrite(settings->comms, GATECTRL, &buffer);
+    buffer = dev->settings.gateCtrl.bits;
+    error = drv8305RegWrite(&dev->comms, GATECTRL, &buffer);
     if (error) {
         return error;
     }
 
-    buffer = settings->icCtrl.bits; 
-    error = drv8305RegWrite(settings->comms, ICCTRL, &buffer);
+    buffer = dev->settings.icCtrl.bits; 
+    error = drv8305RegWrite(&dev->comms, ICCTRL, &buffer);
     if (error) {
         return error;
     }
 
-    buffer = settings->shntCtrl.bits;
-    error = drv8305RegWrite(settings->comms, SHNTCTRL, &buffer);
+    buffer = dev->settings.shntCtrl.bits;
+    error = drv8305RegWrite(&dev->comms, SHNTCTRL, &buffer);
     if (error) {
         return error;
     }
 
-    buffer = settings->vregCtrl.bits; 
-    error = drv8305RegWrite(settings->comms, VREGCTRL, &buffer);
+    buffer = dev->settings.vregCtrl.bits; 
+    error = drv8305RegWrite(&dev->comms, VREGCTRL, &buffer);
     if (error) {
         return error;
     }
 
-    buffer = settings->vdsCtrl.bits; 
-    error = drv8305RegWrite(settings->comms, VDSCNTRL, &buffer);
-
-    return error;
-
-}
-
-drvError_t drv8305DevInit(drv8305Dev_t *dev, const drv8305Comms_t spi){
-    drvError_t error = DRV_OK;
-
-    // dev->settings->comms->nCS = csPort;
-
-    // printf("CS pin Set \n\r");
-
-    // dev->settings->comms->spiInterface = spi;
-
-    // printf("SPI Set \n\r");
-
-    // error = drv8305GetSettings(dev->settings);
+    buffer = dev->settings.vdsCtrl.bits; 
+    error = drv8305RegWrite(&dev->comms, VDSCNTRL, &buffer);
 
     return error;
 
@@ -208,7 +190,7 @@ drvError_t drv8305CW(drv8305Dev_t *dev){ //this needs to be called at the desire
 
     switch (dev->settings.gateCtrl.PWM_MODE) {
 
-        case INPUT_1:
+        case DRV_PWM_INPUT_1:
             state = drv8305StateMachine(false);
 
             setPin(dev->pinCtrl->singlePwm.inla, (state & 1));
@@ -221,11 +203,11 @@ drvError_t drv8305CW(drv8305Dev_t *dev){ //this needs to be called at the desire
 
         break;
 
-        case  INPUT_3:
+        case  DRV_PWM_INPUT_3:
             
         break;
 
-        case  INPUT_6:
+        case  DRV_PWM_INPUT_6:
             
         break;
         
@@ -243,7 +225,7 @@ drvError_t drv8305CCW(drv8305Dev_t *dev){ //this needs to be called at the desir
 
     switch (dev->settings.gateCtrl.PWM_MODE) {
 
-        case INPUT_1:
+        case DRV_PWM_INPUT_1:
             state = drv8305StateMachine(true);
 
             setPin(dev->pinCtrl->singlePwm.dwell, (state & 1));
@@ -256,11 +238,11 @@ drvError_t drv8305CCW(drv8305Dev_t *dev){ //this needs to be called at the desir
 
         break;
 
-        case  INPUT_3:
+        case  DRV_PWM_INPUT_3:
             
         break;
 
-        case  INPUT_6:
+        case  DRV_PWM_INPUT_6:
             
         break;
         
@@ -277,7 +259,7 @@ drvError_t drv8305Brake(drv8305Dev_t *dev){
     drvError_t error = DRV_OK;
     switch (dev->settings.gateCtrl.PWM_MODE) {
 
-        case INPUT_1:
+        case DRV_PWM_INPUT_1:
             // all gpio low
             setPin(dev->pinCtrl->singlePwm.inla, false);
             setPin(dev->pinCtrl->singlePwm.inhb, false);
@@ -286,14 +268,14 @@ drvError_t drv8305Brake(drv8305Dev_t *dev){
             
         break;
 
-        case  INPUT_3:
+        case  DRV_PWM_INPUT_3:
             //pull all 3 channels low
             pwm8SetDutyCycle(dev->pinCtrl->triplePWM.pwm1,0, true);
             pwm8SetDutyCycle(dev->pinCtrl->triplePWM.pwm1,0, true);
             pwm8SetDutyCycle(dev->pinCtrl->triplePWM.pwm1,0, true);
         break;
 
-        case  INPUT_6: //this is super scuffed
+        case  DRV_PWM_INPUT_6: //this is super scuffed
             pwm8SetDutyCycle(dev->pinCtrl->sixPWM.pwm1,0, true);
             pwm8SetDutyCycle(dev->pinCtrl->sixPWM.pwm2,0, true);
             pwm8SetDutyCycle(dev->pinCtrl->sixPWM.pwm3,0, true);
@@ -314,7 +296,7 @@ drvError_t drv8305Align(drv8305Dev_t *dev){
     drvError_t error = DRV_OK;
     switch (dev->settings.gateCtrl.PWM_MODE) {
 
-        case INPUT_1:
+        case DRV_PWM_INPUT_1:
             // 1110
             setPin(dev->pinCtrl->singlePwm.inla, false);
             setPin(dev->pinCtrl->singlePwm.inhb, false);
@@ -322,11 +304,11 @@ drvError_t drv8305Align(drv8305Dev_t *dev){
             setPin(dev->pinCtrl->singlePwm.dwell, false);
         break;
 
-        case  INPUT_3:
+        case  DRV_PWM_INPUT_3:
             //pwm first channel, low on other 2
         break;
 
-        case  INPUT_6:
+        case  DRV_PWM_INPUT_6:
             //two pwm, 0101 on the rest
         break;
         

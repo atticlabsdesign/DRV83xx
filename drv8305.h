@@ -141,9 +141,9 @@ typedef enum {
 } drv8305CommOption_t;
 
 typedef enum {
-    INPUT_6,
-    INPUT_3,
-    INPUT_1
+    DRV_PWM_INPUT_6,
+    DRV_PWM_INPUT_3,
+    DRV_PWM_INPUT_1
 } drv8305PwmMode_t;
 
 typedef enum {
@@ -440,7 +440,7 @@ typedef union {
 
 typedef struct {
     const struct SPI_INTERFACE *spiInterface;
-    pinId_t              *nCS;
+    const pinId_t              nCS;
 }drv8305Comms_t;
 
 
@@ -452,9 +452,10 @@ typedef struct {
     drv8305_SHUNT_AMP_CTRL_t        shntCtrl;
     drv8305_VOLAGE_REG_CTRL_t       vregCtrl;
     drv8305_VDS_SENSE_CTRL_t        vdsCtrl;
-    drv8305Comms_t                  *comms;
 
 } drv8305Settings_t;
+
+const drv8305Settings_t DRV8305_DEFAULT_SETTINGS;
 
 typedef struct {
     union {
@@ -489,8 +490,19 @@ typedef struct {
 
 } drv8305Pins_t;
 
+/**
+ * @brief device struct for DRV8305 Motor Controller
+ * @details 
+ * example minimum definition:
+ *    drv8305Dev_t motCtrlDev0 = {
+ *       .comms.spiInterface = &SPI,
+ *       .comms.nCS.port = &PORTB, 
+ *       .comms.nCS.pin = 1
+ *      };
+ */
 typedef struct {
     drv8305Settings_t settings;
+    drv8305Comms_t comms;
     drv8305Pins_t *pinCtrl;
     
 } drv8305Dev_t;
@@ -502,18 +514,15 @@ typedef struct {
 ********************/
 
 
-
 drvError_t drv8305RegRead(drv8305Comms_t *, drv8305Addr_t, uint16_t*);
 
-drvError_t drv8305RegWrite(const drv8305Comms_t *, drv8305Addr_t, uint16_t*); // should this really be public?
+drvError_t drv8305RegWrite(drv8305Comms_t *, drv8305Addr_t, uint16_t*); // should this really be public?
 
-drvError_t drv8305SetSettings(drv8305Settings_t *);
+drvError_t drv8305SetSettings(drv8305Dev_t *);
 
-drvError_t drv8305GetSettings(drv8305Settings_t *);
+drvError_t drv8305GetSettings(drv8305Dev_t *);
 
 
-//these functions are undercooked, give more time
-drvError_t drv8305DevInit(drv8305Dev_t *, const drv8305Comms_t);
 
 drvError_t drv8305CW(drv8305Dev_t*);
 
