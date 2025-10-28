@@ -45,18 +45,182 @@
 
 
 typedef enum {
-    WARNING     = 0x1,
-    VDSFAULT    = 0x2,
-    ICFAULT     = 0x3,
-    VGSFAULT    = 0x4,
-    HSGATECTRL  = 0x5,
-    LSGATECTRL  = 0x6,
-    GATECTRL    = 0x7,
-    ICCTRL      = 0x9,
-    SHNTCTRL    = 0xA,
-    VREGCTRL    = 0xB,
-    VDSCNTRL    = 0xC
+    DRV8305_WARNING_ADDR     = 0x1,
+    DRV8305_VDSFAULT_ADDR    = 0x2,
+    DRV8305_ICFAULT_ADDR     = 0x3,
+    DRV8305_VGSFAULT_ADDR    = 0x4,
+    DRV8305_HSGATECTRL_ADDR  = 0x5,
+    DRV8305_LSGATECTRL_ADDR  = 0x6,
+    DRV8305_GATECTRL_ADDR    = 0x7,
+    DRV8305_ICCTRL_ADDR      = 0x9,
+    DRV8305_SHNTCTRL_ADDR    = 0xA,
+    DRV8305_VREGCTRL_ADDR    = 0xB,
+    DRV8305_VDSCNTRL_ADDR    = 0xC
 } drv8305Addr_t;
+
+/*________________________________________________*/
+
+#if  __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__ //flip the struct order so that the bits member remains readable on the host device
+
+typedef struct {
+
+    union {
+        struct { // 0x1
+            bool OTW            ;
+            bool TEMP_FLAG3     ;
+            bool TEMP_FLAG2     ;
+            bool TEMP_FLAG1     ;
+            bool VCHP_UVFL      ;
+            bool VDS_STATUS     ;
+            bool PVDD_OVFL      ;
+            bool PVDD_UVFL      ;
+            bool TEMP_FLAG4     ;
+            int             : 1 ; //RSVD
+            bool FAULT          ;
+        };
+
+        uint16_t bits;
+
+    } WWR; //warnings and watchdog reset
+
+    union {
+        struct { // 0x2
+            bool SNS_A_OCP      ;
+            bool SNS_B_OCP      ;
+            bool SNS_C_OCP      ;
+            int             : 2 ; //RSVD
+            bool VDS_LC         ;
+            bool VDS_HC         ;
+            bool VDS_LB         ;
+            bool VDS_HB         ;
+            bool VDS_LA         ;
+            bool VDS_HA         ;
+            
+        };
+
+        uint16_t bits;
+
+    } VDS; //Overvoltage/VDS    
+
+    union {
+        struct { // 0x3
+            bool VCPH_OVLO_ABS  ;
+            bool VCPH_OVLO      ;
+            bool VCPH_OVLO2     ;
+            int             : 1 ; //RSVD
+            bool VCP_LSD_UVLO2  ;
+            bool AVDD_UVLO      ;
+            bool VREG_UV        ;
+            int             : 1 ; //RSVD
+            bool OTSD           ;
+            bool WD_FAULT       ;
+            bool PVDD_UVLO2     ;
+        };
+
+        uint16_t bits;
+
+    } IC; //IC
+
+    union {
+        struct { // 0x3
+            int             : 5 ; //RSVD
+            bool VGS_LC         ;
+            bool VGS_HC         ;
+            bool VGS_LB         ;
+            bool VGS_HB         ;
+            bool VGS_LA         ;
+            bool VGS_HA         ;
+        };
+
+        uint16_t bits;
+
+    } VGS; //VGS
+
+} drv8305Faults_t;
+
+
+
+
+#else
+
+typedef struct {
+
+    union {
+        struct { // 0x1
+            bool FAULT          ;
+            int             : 1 ; //RSVD
+            bool TEMP_FLAG4     ;
+            bool PVDD_UVFL      ;
+            bool PVDD_OVFL      ;
+            bool VDS_STATUS     ;
+            bool VCHP_UVFL      ;
+            bool TEMP_FLAG1     ;
+            bool TEMP_FLAG2     ;
+            bool TEMP_FLAG3     ;
+            bool OTW            ;
+        };
+
+        uint16_t bits;
+
+    } WWR; //warnings and watchdog reset
+    
+    union {
+        struct { // 0x2
+            bool VDS_HA         ;
+            bool VDS_LA         ;
+            bool VDS_HB         ;
+            bool VDS_LB         ;
+            bool VDS_HC         ;
+            bool VDS_LC         ;
+            int             : 2 ; //RSVD
+            bool SNS_C_OCP      ;
+            bool SNS_B_OCP      ;
+            bool SNS_A_OCP      ;
+            
+        };
+
+        uint16_t bits;
+
+    } VDS; //Overvoltage/VDS    
+    
+    union {
+        struct { // 0x3
+            bool PVDD_UVLO2     ;
+            bool WD_FAULT       ;
+            bool OTSD           ;
+            int             : 1 ; //RSVD
+            bool VREG_UV        ;
+            bool AVDD_UVLO      ;
+            bool VCP_LSD_UVLO2  ;
+            int             : 1 ; //RSVD
+            bool VCPH_OVLO2     ;
+            bool VCPH_OVLO      ;
+            bool VCPH_OVLO_ABS  ;
+        };
+
+        uint16_t bits;
+
+    } IC; //IC
+
+    union {
+        struct { // 0x3
+            bool VGS_HA         ;
+            bool VGS_LA         ;
+            bool VGS_HB         ;
+            bool VGS_LB         ;
+            bool VGS_HC         ;
+            bool VGS_LC         ;
+            int             : 5 ; //RSVD
+        };
+
+        uint16_t bits;
+
+    } VGS; //VGS
+
+} drv8305Faults_t;
+
+
+#endif
 
 /*________________________________________________*/
 
@@ -106,7 +270,7 @@ typedef union {
     struct { // 0x5 and 0x6
         drv8305IDrivep_t   IDRIVEP : 4;
         drv8305IDriveN_t   IDRIVEN : 4;
-        drv8305TDrive_t    TDRIVEN : 2;
+        drv8305TDrive_t    TDRIVE  : 2;
         int                        : 6; //RSVD
 
     };
@@ -444,6 +608,7 @@ typedef struct {
 }drv8305Comms_t;
 
 
+
 typedef struct {
     drv8305_XS_GATE_DRIVE_CONTROL_t highGateCtrl;      
     drv8305_XS_GATE_DRIVE_CONTROL_t lowGateCtrl;
@@ -502,8 +667,9 @@ typedef struct {
  */
 typedef struct {
     drv8305Settings_t settings;
+    drv8305Faults_t faults;
     drv8305Comms_t comms;
-    drv8305Pins_t *pinCtrl;
+    drv8305Pins_t pinCtrl;
     
 } drv8305Dev_t;
 
@@ -522,6 +688,7 @@ drvError_t drv8305SetSettings(drv8305Dev_t *);
 
 drvError_t drv8305GetSettings(drv8305Dev_t *);
 
+drvError_t drv8305GetFaults(drv8305Dev_t *);
 
 
 drvError_t drv8305CW(drv8305Dev_t*);

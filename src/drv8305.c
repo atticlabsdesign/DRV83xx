@@ -101,37 +101,63 @@ drvError_t drv8305RegWrite(drv8305Comms_t *spi, drv8305Addr_t addr, uint16_t *da
 drvError_t drv8305GetSettings(drv8305Dev_t *dev){
     drvError_t error = DRV_OK;
     
-    error = drv8305RegRead(&dev->comms, HSGATECTRL, &dev->settings.highGateCtrl.bits);
+    error = drv8305RegRead(&dev->comms, DRV8305_HSGATECTRL_ADDR, &dev->settings.highGateCtrl.bits);
     if (error) {
         return error;
     }
     
-    error = drv8305RegRead(&dev->comms, LSGATECTRL, &dev->settings.lowGateCtrl.bits);
+    error = drv8305RegRead(&dev->comms, DRV8305_LSGATECTRL_ADDR, &dev->settings.lowGateCtrl.bits);
     if (error) {
         return error;
     }
     
-    error = drv8305RegRead(&dev->comms, GATECTRL, &dev->settings.gateCtrl.bits);
+    error = drv8305RegRead(&dev->comms, DRV8305_GATECTRL_ADDR, &dev->settings.gateCtrl.bits);
     if (error) {
         return error;
     }
     
-    error = drv8305RegRead(&dev->comms, ICCTRL, &dev->settings.icCtrl.bits);
+    error = drv8305RegRead(&dev->comms, DRV8305_ICCTRL_ADDR, &dev->settings.icCtrl.bits);
     if (error) {
         return error;
     }
     
-    error = drv8305RegRead(&dev->comms, SHNTCTRL, &dev->settings.shntCtrl.bits);
+    error = drv8305RegRead(&dev->comms, DRV8305_SHNTCTRL_ADDR, &dev->settings.shntCtrl.bits);
     if (error) {
         return error;
     }
     
-    error = drv8305RegRead(&dev->comms, VREGCTRL, &dev->settings.vregCtrl.bits);
+    error = drv8305RegRead(&dev->comms, DRV8305_VREGCTRL_ADDR, &dev->settings.vregCtrl.bits);
     if (error) {
         return error;
     }
     
-    error = drv8305RegRead(&dev->comms, VDSCNTRL, &dev->settings.vdsCtrl.bits);
+    error = drv8305RegRead(&dev->comms, DRV8305_VDSCNTRL_ADDR, &dev->settings.vdsCtrl.bits);
+
+    return error;
+}
+
+drvError_t drv8305GetFaults(drv8305Dev_t *dev){
+    drvError_t error = DRV_OK;
+    
+    error = drv8305RegRead(&dev->comms, DRV8305_WARNING_ADDR, &dev->faults.WWR.bits);
+    if (error) {
+        return error;
+    }
+    
+    error = drv8305RegRead(&dev->comms, DRV8305_VDSFAULT_ADDR, &dev->faults.VDS.bits);
+    if (error) {
+        return error;
+    }
+
+    error = drv8305RegRead(&dev->comms, DRV8305_ICFAULT_ADDR, &dev->faults.IC.bits);
+    if (error) {
+        return error;
+    }
+
+    error = drv8305RegRead(&dev->comms, DRV8305_VGSFAULT_ADDR, &dev->faults.VGS.bits);
+    if (error) {
+        return error;
+    }
 
     return error;
 }
@@ -142,43 +168,43 @@ drvError_t drv8305SetSettings(drv8305Dev_t *dev){ //TODO: try to figure out a wa
     uint16_t buffer; //so we dont overwrite the values in the struct
 
     buffer = dev->settings.highGateCtrl.bits;
-    error = drv8305RegWrite(&dev->comms, HSGATECTRL, &buffer);
+    error = drv8305RegWrite(&dev->comms, DRV8305_HSGATECTRL_ADDR, &buffer);
     if (error) {
         return error;
     }
 
     buffer = dev->settings.lowGateCtrl.bits; 
-    error = drv8305RegWrite(&dev->comms, LSGATECTRL, &buffer);
+    error = drv8305RegWrite(&dev->comms, DRV8305_LSGATECTRL_ADDR, &buffer);
     if (error) {
         return error;
     }
 
     buffer = dev->settings.gateCtrl.bits;
-    error = drv8305RegWrite(&dev->comms, GATECTRL, &buffer);
+    error = drv8305RegWrite(&dev->comms, DRV8305_GATECTRL_ADDR, &buffer);
     if (error) {
         return error;
     }
 
     buffer = dev->settings.icCtrl.bits; 
-    error = drv8305RegWrite(&dev->comms, ICCTRL, &buffer);
+    error = drv8305RegWrite(&dev->comms, DRV8305_ICCTRL_ADDR, &buffer);
     if (error) {
         return error;
     }
 
     buffer = dev->settings.shntCtrl.bits;
-    error = drv8305RegWrite(&dev->comms, SHNTCTRL, &buffer);
+    error = drv8305RegWrite(&dev->comms, DRV8305_SHNTCTRL_ADDR, &buffer);
     if (error) {
         return error;
     }
 
     buffer = dev->settings.vregCtrl.bits; 
-    error = drv8305RegWrite(&dev->comms, VREGCTRL, &buffer);
+    error = drv8305RegWrite(&dev->comms, DRV8305_VREGCTRL_ADDR, &buffer);
     if (error) {
         return error;
     }
 
     buffer = dev->settings.vdsCtrl.bits; 
-    error = drv8305RegWrite(&dev->comms, VDSCNTRL, &buffer);
+    error = drv8305RegWrite(&dev->comms, DRV8305_VDSCNTRL_ADDR, &buffer);
 
     return error;
 
@@ -193,13 +219,13 @@ drvError_t drv8305CW(drv8305Dev_t *dev){ //this needs to be called at the desire
         case DRV_PWM_INPUT_1:
             state = drv8305StateMachine(false);
 
-            setPin(dev->pinCtrl->singlePwm.inla, (state & 1));
+            setPin(dev->pinCtrl.singlePwm.inla, (state & 1));
             state >>= 1;
-            setPin(dev->pinCtrl->singlePwm.inlb, (state & 1));
+            setPin(dev->pinCtrl.singlePwm.inlb, (state & 1));
             state >>= 1;
-            setPin(dev->pinCtrl->singlePwm.inhb, (state & 1));
+            setPin(dev->pinCtrl.singlePwm.inhb, (state & 1));
             state >>= 1;
-            setPin(dev->pinCtrl->singlePwm.inla, (state & 1));
+            setPin(dev->pinCtrl.singlePwm.inla, (state & 1));
 
         break;
 
@@ -228,13 +254,13 @@ drvError_t drv8305CCW(drv8305Dev_t *dev){ //this needs to be called at the desir
         case DRV_PWM_INPUT_1:
             state = drv8305StateMachine(true);
 
-            setPin(dev->pinCtrl->singlePwm.dwell, (state & 1));
+            setPin(dev->pinCtrl.singlePwm.dwell, (state & 1));
             state >>= 1;
-            setPin(dev->pinCtrl->singlePwm.inlb, (state & 1));
+            setPin(dev->pinCtrl.singlePwm.inlb, (state & 1));
             state >>= 1;
-            setPin(dev->pinCtrl->singlePwm.inhb, (state & 1));
+            setPin(dev->pinCtrl.singlePwm.inhb, (state & 1));
             state >>= 1;
-            setPin(dev->pinCtrl->singlePwm.inla, (state & 1));
+            setPin(dev->pinCtrl.singlePwm.inla, (state & 1));
 
         break;
 
@@ -261,27 +287,27 @@ drvError_t drv8305Brake(drv8305Dev_t *dev){
 
         case DRV_PWM_INPUT_1:
             // all gpio low
-            setPin(dev->pinCtrl->singlePwm.inla, false);
-            setPin(dev->pinCtrl->singlePwm.inhb, false);
-            setPin(dev->pinCtrl->singlePwm.inlb, false);
-            setPin(dev->pinCtrl->singlePwm.dwell, false);
+            setPin(dev->pinCtrl.singlePwm.inla, false);
+            setPin(dev->pinCtrl.singlePwm.inhb, false);
+            setPin(dev->pinCtrl.singlePwm.inlb, false);
+            setPin(dev->pinCtrl.singlePwm.dwell, false);
             
         break;
 
         case  DRV_PWM_INPUT_3:
             //pull all 3 channels low
-            pwm8SetDutyCycle(dev->pinCtrl->triplePWM.pwm1,0, true);
-            pwm8SetDutyCycle(dev->pinCtrl->triplePWM.pwm1,0, true);
-            pwm8SetDutyCycle(dev->pinCtrl->triplePWM.pwm1,0, true);
+            pwm8SetDutyCycle(dev->pinCtrl.triplePWM.pwm1,0, true);
+            pwm8SetDutyCycle(dev->pinCtrl.triplePWM.pwm1,0, true);
+            pwm8SetDutyCycle(dev->pinCtrl.triplePWM.pwm1,0, true);
         break;
 
         case  DRV_PWM_INPUT_6: //this is super scuffed
-            pwm8SetDutyCycle(dev->pinCtrl->sixPWM.pwm1,0, true);
-            pwm8SetDutyCycle(dev->pinCtrl->sixPWM.pwm2,0, true);
-            pwm8SetDutyCycle(dev->pinCtrl->sixPWM.pwm3,0, true);
-            pwm8SetDutyCycle(dev->pinCtrl->sixPWM.pwm4,0, true);
-            pwm8SetDutyCycle(dev->pinCtrl->sixPWM.pwm5,0, true);
-            pwm8SetDutyCycle(dev->pinCtrl->sixPWM.pwm6,0, true);
+            pwm8SetDutyCycle(dev->pinCtrl.sixPWM.pwm1,0, true);
+            pwm8SetDutyCycle(dev->pinCtrl.sixPWM.pwm2,0, true);
+            pwm8SetDutyCycle(dev->pinCtrl.sixPWM.pwm3,0, true);
+            pwm8SetDutyCycle(dev->pinCtrl.sixPWM.pwm4,0, true);
+            pwm8SetDutyCycle(dev->pinCtrl.sixPWM.pwm5,0, true);
+            pwm8SetDutyCycle(dev->pinCtrl.sixPWM.pwm6,0, true);
         break;
         
         default:
@@ -298,10 +324,10 @@ drvError_t drv8305Align(drv8305Dev_t *dev){
 
         case DRV_PWM_INPUT_1:
             // 1110
-            setPin(dev->pinCtrl->singlePwm.inla, false);
-            setPin(dev->pinCtrl->singlePwm.inhb, false);
-            setPin(dev->pinCtrl->singlePwm.inlb, false);
-            setPin(dev->pinCtrl->singlePwm.dwell, false);
+            setPin(dev->pinCtrl.singlePwm.inla, false);
+            setPin(dev->pinCtrl.singlePwm.inhb, false);
+            setPin(dev->pinCtrl.singlePwm.inlb, false);
+            setPin(dev->pinCtrl.singlePwm.dwell, false);
         break;
 
         case  DRV_PWM_INPUT_3:
@@ -329,10 +355,11 @@ uint8_t drv8305StateMachine(bool CCW){
         currentState = 11;
     } else if (currentState == 11 && CCW) {
         currentState = 0;
+    } else if (CCW){
+        currentState ++; 
     } else {
-        currentState += CCW; 
+        currentState --;
     }
-
     return STATE_LUT[currentState];
 }
 
