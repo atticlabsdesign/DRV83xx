@@ -604,7 +604,7 @@ typedef union {
 
 typedef struct {
     const struct SPI_INTERFACE *spiInterface;
-    const pinId_t              nCS;
+    const pinId8_t              nCS;
 }drv8305Comms_t;
 
 
@@ -626,10 +626,10 @@ typedef struct {
     union {
         struct {
             pwmCh8_t pwm;
-            pinId_t inla;
-            pinId_t inhb;
-            pinId_t inlb;
-            pinId_t dwell; //
+            pinId8_t inla;
+            pinId8_t inhb;
+            pinId8_t inlb;
+            pinId8_t dwell; //
         } singlePwm;
 
         struct {
@@ -647,11 +647,11 @@ typedef struct {
             pwmCh8_t pwm6;
         } sixPWM; 
     };
-    pinId_t enGate;
-    pinId_t nFault;
-    pinId_t pwrgd;
+    pinId8_t enGate;
+    pinId8_t nFault;
+    pinId8_t pwrgd;
     //still need some current amplifier stuff
-    pinId_t wake;
+    pinId8_t wake;
 
 } drv8305Pins_t;
 

@@ -40,7 +40,7 @@ uint8_t drv8305StateMachine(bool);
 drvError_t drv8305RegRead(drv8305Comms_t *spi, drv8305Addr_t addr, uint16_t *data){
     bool timeout = false;
     
-    setPin(spi->nCS, LOW);
+    setPin8(spi->nCS, LOW);
 
     uint16_t buffer = (1<<15) | (addr << 11);
 
@@ -57,7 +57,7 @@ drvError_t drv8305RegRead(drv8305Comms_t *spi, drv8305Addr_t addr, uint16_t *dat
     *data = (buffer & 0x3ff);
     
 
-    setPin(spi->nCS, HIGH);
+    setPin8(spi->nCS, HIGH);
     
     if (timeout) {
         return DRV_NO_RESP;
@@ -76,7 +76,7 @@ drvError_t drv8305RegRead(drv8305Comms_t *spi, drv8305Addr_t addr, uint16_t *dat
  */
 drvError_t drv8305RegWrite(drv8305Comms_t *spi, drv8305Addr_t addr, uint16_t *data){
     bool timeout = false;
-    setPin(spi->nCS, LOW);
+    setPin8(spi->nCS, LOW);
     
     uint16_t buffer = (0<<15) | (addr << 11) | (*data & 0x3ff);
 
@@ -87,7 +87,7 @@ drvError_t drv8305RegWrite(drv8305Comms_t *spi, drv8305Addr_t addr, uint16_t *da
     spi->spiInterface->BufferExchange(&buffer, sizeof(buffer));
     *data = (buffer & 0x3ff); //data now cointains the overwritten values, is this even useful?
 
-    setPin(spi->nCS, HIGH);
+    setPin8(spi->nCS, HIGH);
 
     if (timeout) {
         return DRV_NO_RESP;
@@ -219,13 +219,13 @@ drvError_t drv8305CW(drv8305Dev_t *dev){ //this needs to be called at the desire
         case DRV_PWM_INPUT_1:
             state = drv8305StateMachine(false);
 
-            setPin(dev->pinCtrl.singlePwm.inla, (state & 1));
+            setPin8(dev->pinCtrl.singlePwm.inla, (state & 1));
             state >>= 1;
-            setPin(dev->pinCtrl.singlePwm.inlb, (state & 1));
+            setPin8(dev->pinCtrl.singlePwm.inlb, (state & 1));
             state >>= 1;
-            setPin(dev->pinCtrl.singlePwm.inhb, (state & 1));
+            setPin8(dev->pinCtrl.singlePwm.inhb, (state & 1));
             state >>= 1;
-            setPin(dev->pinCtrl.singlePwm.inla, (state & 1));
+            setPin8(dev->pinCtrl.singlePwm.inla, (state & 1));
 
         break;
 
@@ -254,13 +254,13 @@ drvError_t drv8305CCW(drv8305Dev_t *dev){ //this needs to be called at the desir
         case DRV_PWM_INPUT_1:
             state = drv8305StateMachine(true);
 
-            setPin(dev->pinCtrl.singlePwm.dwell, (state & 1));
+            setPin8(dev->pinCtrl.singlePwm.dwell, (state & 1));
             state >>= 1;
-            setPin(dev->pinCtrl.singlePwm.inlb, (state & 1));
+            setPin8(dev->pinCtrl.singlePwm.inlb, (state & 1));
             state >>= 1;
-            setPin(dev->pinCtrl.singlePwm.inhb, (state & 1));
+            setPin8(dev->pinCtrl.singlePwm.inhb, (state & 1));
             state >>= 1;
-            setPin(dev->pinCtrl.singlePwm.inla, (state & 1));
+            setPin8(dev->pinCtrl.singlePwm.inla, (state & 1));
 
         break;
 
@@ -287,10 +287,10 @@ drvError_t drv8305Brake(drv8305Dev_t *dev){
 
         case DRV_PWM_INPUT_1:
             // all gpio low
-            setPin(dev->pinCtrl.singlePwm.inla, false);
-            setPin(dev->pinCtrl.singlePwm.inhb, false);
-            setPin(dev->pinCtrl.singlePwm.inlb, false);
-            setPin(dev->pinCtrl.singlePwm.dwell, false);
+            setPin8(dev->pinCtrl.singlePwm.inla, false);
+            setPin8(dev->pinCtrl.singlePwm.inhb, false);
+            setPin8(dev->pinCtrl.singlePwm.inlb, false);
+            setPin8(dev->pinCtrl.singlePwm.dwell, false);
             
         break;
 
@@ -324,10 +324,10 @@ drvError_t drv8305Align(drv8305Dev_t *dev){
 
         case DRV_PWM_INPUT_1:
             // 1110
-            setPin(dev->pinCtrl.singlePwm.inla, false);
-            setPin(dev->pinCtrl.singlePwm.inhb, false);
-            setPin(dev->pinCtrl.singlePwm.inlb, false);
-            setPin(dev->pinCtrl.singlePwm.dwell, false);
+            setPin8(dev->pinCtrl.singlePwm.inla, false);
+            setPin8(dev->pinCtrl.singlePwm.inhb, false);
+            setPin8(dev->pinCtrl.singlePwm.inlb, false);
+            setPin8(dev->pinCtrl.singlePwm.dwell, false);
         break;
 
         case  DRV_PWM_INPUT_3:
